@@ -1,0 +1,84 @@
+<html>
+
+<head>
+
+    <style>
+        body {
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="three.js/build/three.min.js"></script>
+    <script src="three.js/examples/js/controls/OrbitControls.js"></script>
+
+</head>
+
+<body>
+    <script>
+        var numBoxes = 10000;
+        var fieldSize = 50;
+        var rotSpeed = 0.05;
+        var boxSize = 0.5;
+
+        window.addEventListener('resize', resizeHandler);
+
+        var scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.08);
+        var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.position.z = 5;
+
+        var controls = new THREE.OrbitControls(camera);
+        var geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+        var material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            wireframe: true
+        });
+
+        var boxes = [];
+
+        for (var i = 0; i < numBoxes; i++) {
+
+            var box = new THREE.Mesh(geometry, material);
+
+            box.position.x = (Math.random() * fieldSize) - (fieldSize / 2)
+            box.position.y = (Math.random() * fieldSize) - (fieldSize / 2)
+            box.position.z = (Math.random() * fieldSize) - (fieldSize / 2)
+            box.speed = Math.random() * rotSpeed;
+            boxes.push(box);
+            scene.add(box);
+
+        }
+
+        console.log(boxes.length);
+
+
+        document.body.appendChild(renderer.domElement);
+
+        update();
+
+        function update() {
+            requestAnimationFrame(update);
+
+            for (var i = 0; i < numBoxes; i++) {
+                boxes[i].rotation.x += boxes[i].speed;
+                boxes[i].rotation.y += boxes[i].speed;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function resizeHandler() {
+            var height = window.innerHeight;
+            var width = window.innerWidth;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+
+    </script>
+</body>
+
+</html>

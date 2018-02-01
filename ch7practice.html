@@ -1,0 +1,124 @@
+<html>
+
+<head>
+    <title>Particles</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="three.js/build/three.js"></script>
+    <script src="three.js/examples/js/controls/OrbitControls.js"></script>
+    <script src="dat.gui/build/dat.gui.min.js"></script>
+    <script src="three.js/examples/js/geometries/ConvexGeometry.js"></script>
+    <script src="three.js/examples/js/QuickHull.js"></script>
+    <script>
+        function init() {
+
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(-10, 10, 10);
+
+            var controls = new THREE.OrbitControls(camera);
+            var renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.setSize(width, height);
+
+            var points = randomPoints(1000, 10);
+            var convexGeo = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+
+            document.body.appendChild(renderer.domElement);
+            update();
+
+            var shape = createParticleSystem(convexGeo);
+            scene.add(shape);
+
+
+            function update() {
+                requestAnimationFrame(update);
+                renderer.render(scene, camera);
+            }
+
+        }
+
+        function generateSprite() {
+            var canvas = document.createElement('canvas');
+            canvas.width = 16;
+            canvas.height = 16;
+            var context = canvas.getContext('2d');
+            var gradient = context.createRadialGradient(
+                canvas.width / 2, canvas.height / 2,
+                0,
+                canvas.width / 2, canvas.height / 2,
+                canvas.width / 2);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.2, 'rgba(0,255,255,1)');
+            gradient.addColorStop(0.4, 'rgba(0,0,64,1)');
+            gradient.addColorStop(1, 'rgba(0,0,0,1)');
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            var texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function createParticleSystem(geom) {
+            var material = new THREE.ParticleBasicMaterial({
+                color: 0xffffff,
+                size: 2,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                map: generateSprite()
+            });
+            var system = new THREE.ParticleSystem(geom, material);
+            system.sortParticles = true;
+            return system;
+        }
+
+
+
+
+
+
+
+        function createMesh(geometry) {
+            // assign two materials
+            var meshMaterial = new THREE.MeshNormalMaterial();
+            meshMaterial.side = THREE.DoubleSide;
+            var wireFrameMaterial = new THREE.MeshBasicMaterial({
+                color: 0x000000
+            });
+            wireFrameMaterial.wireframe = true;
+            // create a multimaterial
+            var mesh = THREE.SceneUtils.createMultiMaterialObject(
+                geometry, [meshMaterial, wireFrameMaterial]);
+            return mesh;
+        }
+
+        function randomPoints(num, radius) {
+            var points = [];
+            for (i = 0; i < num; i++) {
+                var x = -radius + 2 * (Math.random() * radius);
+                var y = -radius + 2 * (Math.random() * radius);
+                var z = -radius + 2 * (Math.random() * radius);
+                var point = new THREE.Vector3(x, y, z);
+                points.push(point);
+
+            }
+            console.log(points);
+            return (points);
+        }
+
+    </script>
+</head>
+
+<body onload="init()">
+</body>
+
+</html>

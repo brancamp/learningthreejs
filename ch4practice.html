@@ -1,0 +1,120 @@
+<html>
+
+<head>
+    <title>Materials</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="three.js/build/three.js"></script>
+    <script src="three.js/examples/js/controls/OrbitControls.js"></script>
+    <script src="dat.gui/build/dat.gui.min.js"></script>
+    <script>
+        function init() {
+
+            var gui = new dat.GUI();
+
+            var guicontrols = new function() {
+                this.shininess = 30;
+                this.xrot = 0;
+                this.yrot = 0;
+                this.zrot = 0;
+                this.specColor = new THREE.Color(0xffffff);
+            }
+
+            var axes = new THREE.AxesHelper(5);
+
+            gui.add(guicontrols, 'shininess', 0, 1000);
+            gui.add(guicontrols, 'xrot', 0, 6);
+            gui.add(guicontrols, 'yrot', 0, 6);
+            gui.add(guicontrols, 'zrot', 0, 6);
+            gui.addColor(guicontrols, 'specColor');
+
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.z = 15;
+            scene.add(axes);
+
+            var controls = new THREE.OrbitControls(camera);
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize(width, height);
+
+            var points = [];
+
+            for (var i = 0; i < 50; i++) {
+                points.push(new THREE.Vector2(0.08 * i, 0.0009 * Math.pow(i, 2)));
+            }
+
+            var geo = new THREE.LatheGeometry(points, 50);
+            var mat = new THREE.MeshPhongMaterial({
+                color: 0xaaaaaa,
+                side: THREE.DoubleSide
+                //wireframe: true
+            });
+
+            var shape = new THREE.Mesh(geo, mat);
+            scene.add(shape);
+
+            var l1 = makeLight(1, 5);
+            var l2 = makeLight(-3, -3);
+            var l3 = makeLight(4, -2);
+
+            var ambi = new THREE.AmbientLight(0xffffff, 0.1);
+
+            scene.add(ambi);
+
+            document.body.appendChild(renderer.domElement);
+
+            update();
+
+            function update() {
+
+                requestAnimationFrame(update);
+                renderer.render(scene, camera);
+                shape.rotation.x = guicontrols.xrot;
+                shape.rotation.y = guicontrols.yrot;
+                shape.rotation.z = guicontrols.zrot;
+                mat.shininess = guicontrols.shininess;
+                mat.specular = guicontrols.specColor;
+
+            }
+
+            function makeLight(x, y, z = 0) {
+                var l = new THREE.PointLight(0xffffff, 1, 10);
+                l.position.x = x;
+                l.position.y = y;
+                l.position.z = z;
+
+
+                var lightGeo = new THREE.SphereGeometry(.1);
+                var lightMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff
+                });
+                var lightShape = new THREE.Mesh(lightGeo, lightMat);
+
+
+                scene.add(l);
+                l.add(lightShape);
+
+                return l;
+            }
+        }
+
+    </script>
+
+</head>
+
+<body onload="init()">
+
+
+
+
+</body>
+
+</html>
