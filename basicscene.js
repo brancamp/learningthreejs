@@ -8,15 +8,26 @@ var boxMat = new THREE.MeshBasicMaterial({
     color: 0x00cccc
 });
 var box = new THREE.Mesh(boxGeo, boxMat);
-camera.position.set(5, 5, 5);
+camera.position.set(40, 40, 40);
+camera.lookAt(scene.position);
 scene.add(box);
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-renderer.render(scene, camera);
+
 window.addEventListener('resize', resizeHandler);
+
+update();
+
 
 function resizeHandler() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+}
+
+function update() {
+    requestAnimationFrame(update);
+    renderer.render(scene, camera);
+
+
 }
