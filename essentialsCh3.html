@@ -1,0 +1,142 @@
+<html>
+
+<head>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src="./three.js/build/three.js"></script>
+    <script src="./three.js/examples/js/controls/OrbitControls.js"></script>
+    <script src="./random-maze-generator/src/maze.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+</head>
+
+
+<body>
+    <script>
+        var scene = new THREE.Scene();
+
+        //Set up Camera
+        //var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        //let camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 1, 1000);
+
+        let height = window.innerHeight;
+        let width = window.innerWidth;
+        let camSize = 20;
+        var aspect = window.innerWidth / window.innerHeight;
+        let camera = new THREE.OrthographicCamera(-camSize * aspect, camSize * aspect, camSize, -camSize, 0, 1000);
+
+        camera.position.set(10, 10, 10);
+        camera.lookAt(scene.position);
+        //var orbitControls = new THREE.OrbitControls(camera);
+
+        //Set up Renderer
+        var renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        //Create a box
+        var boxGeo = new THREE.BoxGeometry(1, 1, 1);
+        var boxMat = new THREE.MeshLambertMaterial({
+            color: 0x00cccc
+        });
+        var box = new THREE.Mesh(boxGeo, boxMat);
+        scene.add(box);
+
+        //Create a ground plane
+        let groundGeo = new THREE.BoxGeometry(6, 1, 6);
+        let groundMat = new THREE.MeshLambertMaterial({
+            color: 0xcccccc,
+            side: THREE.DoubleSide
+        });
+        let plane = new THREE.Mesh(groundGeo, groundMat);
+        plane.position.set(0, -1, 0);
+        scene.add(plane);
+
+        //Add Some lights
+        let dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(10, 10, 0)
+        scene.add(dirLight);
+        let ambiLight = new THREE.AmbientLight(0x333333);
+        scene.add(ambiLight);
+
+
+        window.addEventListener('resize', resizeHandler);
+        window.addEventListener('keydown', keyHandler);
+        update();
+
+        function keyHandler(e) {
+            var curX = box.position.x;
+            var curZ = box.position.z;
+            console.log(curX, curZ);
+            switch (e.keyCode) {
+                case 65:
+                    move(curX - 1, curZ);
+                    //box.geometry.translate(-1, 0, 0);
+                    break;
+                case 83:
+                    move(curX, curZ + 1);
+                    //box.geometry.translate(0, 0, 1);
+                    break;
+                case 87:
+                    move(curX, curZ - 1);
+                    //box.geometry.translate(0, 0, -1);
+                    break;
+                case 68:
+                    move(curX + 1, curZ);
+                    //box.geometry.translate(1, 0, 0);
+                    break;
+            }
+        }
+
+        function move(x, z) {
+            var coords = {
+                x: box.position.x,
+                z: box.position.z
+            };
+            var tween = new TWEEN.Tween(coords)
+                .to({
+                    x: x,
+                    z: z
+                }, 100)
+                .onUpdate(function() {
+                    box.position.set(coords.x, box.position.y, coords.z);
+                }).start();
+
+        }
+
+
+        function resizeHandler() {
+
+            //camera.aspect = window.innerWidth / window.innerHeight;
+
+            var aspect = window.innerWidth / window.innerHeight;
+            camera.left = -aspect * camSize;
+            camera.right = aspect * camSize;
+            camera.top = camSize;
+            camera.bottom = -camSize;
+
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function update() {
+            requestAnimationFrame(update);
+            renderer.render(scene, camera);
+            TWEEN.update();
+
+
+
+        }
+
+    </script>
+
+</body>
+
+</html>
