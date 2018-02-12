@@ -19,20 +19,23 @@
         var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
         var raycaster = new THREE.Raycaster();
-
-        //Set up Camera
-        //var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        //let camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 1, 1000);
-
         let height = window.innerHeight;
         let width = window.innerWidth;
+        var objects = [];
+        var boardSize = 20;
+
+
+
+        //Set up the camera
+        var cameraHolder = new THREE.Object3D();
+        scene.add(cameraHolder);
         let camSize = 20;
         var aspect = window.innerWidth / window.innerHeight;
         let camera = new THREE.OrthographicCamera(-camSize * aspect, camSize * aspect, camSize, -camSize, 0, 1000);
-
+        cameraHolder.add(camera);
         camera.position.set(10, 10, 10);
         camera.lookAt(scene.position);
-        var orbitControls = new THREE.OrbitControls(camera);
+
 
         //Set up Renderer
         var renderer = new THREE.WebGLRenderer({
@@ -51,19 +54,21 @@
             color: 0x00cc00
         });
         var box = new THREE.Mesh(boxGeo, boxMat);
-        box.position.set(.5, .5, .5);
+        box.position.set(0, 1, 0);
         scene.add(box);
         box.moving = false;
 
         //Create a ground plane
-        let groundGeo = new THREE.BoxGeometry(20, 1, 20, 20, 1, 20);
+        let groundGeo = new THREE.BoxGeometry(boardSize, 1, boardSize, boardSize, 1, boardSize);
         let groundMat = new THREE.MeshLambertMaterial({
             color: 0xcccccc,
             side: THREE.DoubleSide
         });
         let plane = new THREE.Mesh(groundGeo, groundMat);
-        plane.position.set(0, -.5, 0);
+        plane.position.set(0, 0, 0);
+        //plane.rotation.x = -Math.PI / 2;
         scene.add(plane);
+        objects.push(plane);
 
         //Add Some lights
         let dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -73,8 +78,11 @@
         scene.add(ambiLight);
 
         //Grid
-        let gridHelper = new THREE.GridHelper(20, 20);
-        scene.add(gridHelper);
+        let gridHelper = new THREE.GridHelper(boardSize, boardSize);
+        //scene.add(gridHelper);
+
+        //var axesHelper = new THREE.AxesHelper(20);
+        //scene.add(axesHelper);
 
         //Create the helper box
         var helperBoxMat = new THREE.MeshBasicMaterial({
@@ -85,11 +93,15 @@
         var helperBox = new THREE.Mesh(boxGeo, helperBoxMat);
         scene.add(helperBox);
 
+        var crateMat = new THREE.MeshLambertMaterial({
+            color: 0x8D8D8D
+        });
 
 
         window.addEventListener('resize', resizeHandler);
         window.addEventListener('keydown', keyHandler);
         window.addEventListener('mousemove', mouseMoveHandler);
+        window.addEventListener('click', clickHandler);
         update();
 
         function keyHandler(e) {
@@ -111,6 +123,12 @@
                 case 68:
                     move(curX + 1, curZ);
                     //box.geometry.translate(1, 0, 0);
+                    break;
+                case 37:
+                    rotateCamera('left');
+                    break;
+                case 39:
+                    rotateCamera('right');
                     break;
             }
         }
@@ -134,25 +152,55 @@
                     }).start();
 
             }
-
-
         }
 
+        function rotateCamera(direction) {
+            var newRot;
+            switch (direction) {
+                case 'left':
+                    newRot = {
+                        y: cameraHolder.rotation.y - Math.PI / 2
+                    };
+                    break;
+                case 'right':
+                    newRot = {
+                        y: cameraHolder.rotation.y + Math.PI / 2
+                    };
+                    break;
+            }
+
+            var rot = {
+                y: cameraHolder.rotation.y
+            };
+
+            var tween = new TWEEN.Tween(rot)
+                .to(newRot, 100)
+                .onUpdate(function() {
+                    cameraHolder.rotation.y = rot.y;
+                }).start();
+        }
+
+        function clickHandler(e) {
+
+            var crate = new THREE.Mesh(boxGeo, crateMat);
+            crate.position.copy(helperBox.position);
+            objects.push(crate);
+            scene.add(crate);
+        }
+
+        //On mouse move, show outline of box
         function mouseMoveHandler(e) {
             event.preventDefault();
             mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             raycaster.setFromCamera(mouse, camera);
-            var intersects = raycaster.intersectObjects(scene.children);
+            var intersects = raycaster.intersectObjects(objects);
+
             if (intersects.length > 0) {
                 var intersect = intersects[0];
-                helperBox.position.copy(intersect.point).add(intersect.face.normal);
-                helperBox.position.divideScalar(50).floor().multiplyScalar(50).addScalar(25);
+                helperBox.position.copy(intersect.point).add(intersect.face.normal.multiplyScalar(0.9)).round();
+
+
             }
-            //render();
-
-
-
-
         }
 
 
@@ -168,6 +216,7 @@
         }
 
         function update() {
+
             requestAnimationFrame(update);
             renderer.render(scene, camera);
             TWEEN.update();
