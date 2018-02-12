@@ -10,14 +10,15 @@
     </style>
     <script src="./three.js/build/three.js"></script>
     <script src="./three.js/examples/js/controls/OrbitControls.js"></script>
-    <script src="./random-maze-generator/src/maze.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
 </head>
 
 
 <body>
     <script>
+        var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
+        var raycaster = new THREE.Raycaster();
 
         //Set up Camera
         //var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -31,7 +32,7 @@
 
         camera.position.set(10, 10, 10);
         camera.lookAt(scene.position);
-        //var orbitControls = new THREE.OrbitControls(camera);
+        var orbitControls = new THREE.OrbitControls(camera);
 
         //Set up Renderer
         var renderer = new THREE.WebGLRenderer({
@@ -46,17 +47,22 @@
         var boxMat = new THREE.MeshLambertMaterial({
             color: 0x00cccc
         });
+        var boxMat2 = new THREE.MeshLambertMaterial({
+            color: 0x00cc00
+        });
         var box = new THREE.Mesh(boxGeo, boxMat);
+        box.position.set(.5, .5, .5);
         scene.add(box);
+        box.moving = false;
 
         //Create a ground plane
-        let groundGeo = new THREE.BoxGeometry(6, 1, 6);
+        let groundGeo = new THREE.BoxGeometry(20, 1, 20, 20, 1, 20);
         let groundMat = new THREE.MeshLambertMaterial({
             color: 0xcccccc,
             side: THREE.DoubleSide
         });
         let plane = new THREE.Mesh(groundGeo, groundMat);
-        plane.position.set(0, -1, 0);
+        plane.position.set(0, -.5, 0);
         scene.add(plane);
 
         //Add Some lights
@@ -66,15 +72,29 @@
         let ambiLight = new THREE.AmbientLight(0x333333);
         scene.add(ambiLight);
 
+        //Grid
+        let gridHelper = new THREE.GridHelper(20, 20);
+        scene.add(gridHelper);
+
+        //Create the helper box
+        var helperBoxMat = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0.5,
+            color: 0xcc0000
+        });
+        var helperBox = new THREE.Mesh(boxGeo, helperBoxMat);
+        scene.add(helperBox);
+
+
 
         window.addEventListener('resize', resizeHandler);
         window.addEventListener('keydown', keyHandler);
+        window.addEventListener('mousemove', mouseMoveHandler);
         update();
 
         function keyHandler(e) {
             var curX = box.position.x;
             var curZ = box.position.z;
-            console.log(curX, curZ);
             switch (e.keyCode) {
                 case 65:
                     move(curX - 1, curZ);
@@ -96,26 +116,47 @@
         }
 
         function move(x, z) {
-            var coords = {
-                x: box.position.x,
-                z: box.position.z
-            };
-            var tween = new TWEEN.Tween(coords)
-                .to({
-                    x: x,
-                    z: z
-                }, 100)
-                .onUpdate(function() {
-                    box.position.set(coords.x, box.position.y, coords.z);
-                }).start();
+            if (!box.moving) {
+                box.moving = true;
+                var coords = {
+                    x: box.position.x,
+                    z: box.position.z
+                };
+                var tween = new TWEEN.Tween(coords)
+                    .to({
+                        x: x,
+                        z: z
+                    }, 50)
+                    .onUpdate(function() {
+                        box.position.set(coords.x, box.position.y, coords.z);
+                    }).onComplete(function() {
+                        box.moving = false;
+                    }).start();
+
+            }
+
+
+        }
+
+        function mouseMoveHandler(e) {
+            event.preventDefault();
+            mouse.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(mouse, camera);
+            var intersects = raycaster.intersectObjects(scene.children);
+            if (intersects.length > 0) {
+                var intersect = intersects[0];
+                helperBox.position.copy(intersect.point).add(intersect.face.normal);
+                helperBox.position.divideScalar(50).floor().multiplyScalar(50).addScalar(25);
+            }
+            //render();
+
+
+
 
         }
 
 
         function resizeHandler() {
-
-            //camera.aspect = window.innerWidth / window.innerHeight;
-
             var aspect = window.innerWidth / window.innerHeight;
             camera.left = -aspect * camSize;
             camera.right = aspect * camSize;
