@@ -22,13 +22,14 @@
         let height = window.innerHeight;
         let width = window.innerWidth;
         var objects = [];
-        var boardSize = 20;
+        var boardSize = 17;
 
 
 
         //Set up the camera
         var cameraHolder = new THREE.Object3D();
         scene.add(cameraHolder);
+        cameraHolder.moving = false;
         let camSize = 20;
         var aspect = window.innerWidth / window.innerHeight;
         let camera = new THREE.OrthographicCamera(-camSize * aspect, camSize * aspect, camSize, -camSize, 0, 1000);
@@ -81,8 +82,6 @@
         let gridHelper = new THREE.GridHelper(boardSize, boardSize);
         //scene.add(gridHelper);
 
-        //var axesHelper = new THREE.AxesHelper(20);
-        //scene.add(axesHelper);
 
         //Create the helper box
         var helperBoxMat = new THREE.MeshBasicMaterial({
@@ -134,7 +133,7 @@
         }
 
         function move(x, z) {
-            if (!box.moving) {
+            if (!box.moving && Math.abs(x) < boardSize / 2 && Math.abs(z) < boardSize / 2) {
                 box.moving = true;
                 var coords = {
                     x: box.position.x,
@@ -155,29 +154,35 @@
         }
 
         function rotateCamera(direction) {
-            var newRot;
-            switch (direction) {
-                case 'left':
-                    newRot = {
-                        y: cameraHolder.rotation.y - Math.PI / 2
-                    };
-                    break;
-                case 'right':
-                    newRot = {
-                        y: cameraHolder.rotation.y + Math.PI / 2
-                    };
-                    break;
+            if (cameraHolder.moving == false) {
+                cameraHolder.moving = true;
+                var newRot;
+                switch (direction) {
+                    case 'left':
+                        newRot = {
+                            y: cameraHolder.rotation.y - Math.PI / 2
+                        };
+                        break;
+                    case 'right':
+                        newRot = {
+                            y: cameraHolder.rotation.y + Math.PI / 2
+                        };
+                        break;
+                }
+
+                var rot = {
+                    y: cameraHolder.rotation.y
+                };
+
+                var tween = new TWEEN.Tween(rot)
+                    .to(newRot, 100)
+                    .onUpdate(function() {
+                        cameraHolder.rotation.y = rot.y;
+                    }).onComplete(function() {
+                        cameraHolder.moving = false;
+                    }).start();
             }
 
-            var rot = {
-                y: cameraHolder.rotation.y
-            };
-
-            var tween = new TWEEN.Tween(rot)
-                .to(newRot, 100)
-                .onUpdate(function() {
-                    cameraHolder.rotation.y = rot.y;
-                }).start();
         }
 
         function clickHandler(e) {
