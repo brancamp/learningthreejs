@@ -16,13 +16,15 @@
 
 <body>
     <script>
+        var maxStackHeight = 20;
         var mouse = new THREE.Vector2();
         var scene = new THREE.Scene();
         var raycaster = new THREE.Raycaster();
         let height = window.innerHeight;
         let width = window.innerWidth;
         var objects = [];
-        var boardSize = 17;
+        var boardSize = 21;
+
 
 
 
@@ -96,6 +98,10 @@
             color: 0x8D8D8D
         });
 
+        //get the base height of the board
+        var baseHeight = checkHeight(0, 0);
+        console.log("Baseheight: " + baseHeight);
+
 
         window.addEventListener('resize', resizeHandler);
         window.addEventListener('keydown', keyHandler);
@@ -105,6 +111,7 @@
 
         function keyHandler(e) {
             var curX = box.position.x;
+            var curY = box.position.y;
             var curZ = box.position.z;
             switch (e.keyCode) {
                 case 65:
@@ -133,19 +140,38 @@
         }
 
         function move(x, z) {
+            var height = checkHeight(x, z);
+            var curHeight = checkHeight(box.position.x, box.position.z);
+            var diff = curHeight - height;
+            console.log(height, curHeight, diff);
+            if (Math.abs(diff) > 1) {
+                console.log("Wall too heigh: " + diff)
+                return;
+            }
+            var y = 0;
+            if (diff == 0) {
+                y = box.position.y;
+            } else if (diff > 0) {
+                y = box.position.y + 1;
+            } else {
+                y = box.position.y - 1;
+            }
+
             if (!box.moving && Math.abs(x) < boardSize / 2 && Math.abs(z) < boardSize / 2) {
                 box.moving = true;
                 var coords = {
                     x: box.position.x,
+                    y: box.position.y,
                     z: box.position.z
                 };
                 var tween = new TWEEN.Tween(coords)
                     .to({
                         x: x,
+                        y: y,
                         z: z
                     }, 50)
                     .onUpdate(function() {
-                        box.position.set(coords.x, box.position.y, coords.z);
+                        box.position.set(coords.x, coords.y, coords.z);
                     }).onComplete(function() {
                         box.moving = false;
                     }).start();
@@ -188,9 +214,13 @@
         function clickHandler(e) {
 
             var crate = new THREE.Mesh(boxGeo, crateMat);
-            crate.position.copy(helperBox.position);
-            objects.push(crate);
-            scene.add(crate);
+            if (helperBox.position.x < boardSize / 2 & helperBox.position.z < boardSize / 2) {
+                crate.position.copy(helperBox.position);
+                objects.push(crate);
+                scene.add(crate);
+                checkHeight(0, 0);
+
+            }
         }
 
         //On mouse move, show outline of box
@@ -203,9 +233,19 @@
             if (intersects.length > 0) {
                 var intersect = intersects[0];
                 helperBox.position.copy(intersect.point).add(intersect.face.normal.multiplyScalar(0.9)).round();
-
-
             }
+        }
+
+        function checkHeight(x, z) {
+            var heightChecker = new THREE.Raycaster();
+            var origin = new THREE.Vector3(x, maxStackHeight, z);
+            var dir = new THREE.Vector3(0, -1, 0);
+            heightChecker.set(origin, dir);
+            var intersects = heightChecker.intersectObjects(objects);
+            var dist = intersects[0].distance;
+            var arrowHelper = new THREE.ArrowHelper(dir, origin, 1000);
+            //scene.add(arrowHelper);
+            return dist;
         }
 
 
