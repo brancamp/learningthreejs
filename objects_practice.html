@@ -31,17 +31,19 @@
 
 
         function createBox() {
-            for (var i = 0; i < 1000; i++) {
+            for (var i = 0; i < 2000; i++) {
                 box = new Box();
-
-                box.mesh.position.set(-2.5 + Math.random() * 5, -2.5 + Math.random() * 5, -2.5 + Math.random() * 5);
+                var rho = Math.random() * 5;
+                var theta = Math.random() * 2 * Math.PI;
+                var phi = Math.random() * 2 * Math.PI;
+                var x = rho * Math.sin(phi) * Math.cos(theta);
+                var y = rho * Math.sin(phi) * Math.sin(theta);
+                var z = rho * Math.cos(phi);
+                box.mesh.position.set(x, y, z);
                 boxes.push(box);
             }
 
         }
-
-
-
 
 
         function loop() {
